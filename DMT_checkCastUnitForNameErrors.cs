@@ -21,10 +21,10 @@ namespace Tekla.Technology.Akit.UserScript
         public AssemblyPartsForPrefixErrors()
         {
             var allWrongParts = new ArrayList();
-            
+
             var selector = new Tekla.Structures.Model.UI.ModelObjectSelector();
             var selectedAssemblyEnum = selector.GetSelectedObjects();
-            
+
             while (selectedAssemblyEnum.MoveNext())
             {
                 if (selectedAssemblyEnum.Current is Tekla.Structures.Model.Assembly)
@@ -43,82 +43,32 @@ namespace Tekla.Technology.Akit.UserScript
         {
             var currentWrongParts = new ArrayList();
 
-            var subAssemblyWrongParts = checkSubAssemblys(assembly);
-            currentWrongParts.AddRange(subAssemblyWrongParts);
-            var currentAssemblyWrongParts = checkPartsOfAssembly(assembly);
-            currentWrongParts.AddRange(currentAssemblyWrongParts);
-
-            return currentWrongParts;
-        }
-
-        private static ArrayList checkSubAssemblys(Assembly assembly)
-        {
-            var currentWrongParts = new ArrayList();
-
-            var allSubAssemblys = assembly.GetSubAssemblies();
-            if (allSubAssemblys.Count > 0)
-            {
-                for (int i = 0; i < allSubAssemblys.Count; i++)
-                {
-                    var subWrongParts = checkCurrentAssembly(allSubAssemblys[i] as Assembly);
-                    currentWrongParts.AddRange(subWrongParts);
-                }
-            }
-
-            return currentWrongParts;
-        }
-
-        private static ArrayList checkPartsOfAssembly(Assembly assembly)
-        {
-            var currentWrongParts = new ArrayList();
-
-            var assemblyPrefix = string.Empty;
-            assembly.GetReportProperty("ASSEMBLY_PREFIX", ref assemblyPrefix);
-
             var allParts = assembly.GetSecondaries();
             allParts.Add(assembly.GetMainPart());
+            var allSubAssemblys = assembly.GetSubAssemblies();
 
             for (int i = 0; i < allParts.Count; i++)
             {
                 var currentPart = allParts[i] as Part;
 
-                var partPrefix = string.Empty;
-                currentPart.GetReportProperty("PART_PREFIX", ref partPrefix);
-
-                if (!(partPrefix == assemblyPrefix + getAssumedPartSuffix(currentPart)))
+                if (currentPart.Name != assembly.Name)
                 {
                     currentWrongParts.Add(currentPart);
                 }
             }
 
+            for (int i = 0; i < allSubAssemblys.Count; i++)
+            {
+                Assembly currentSubAssembly = allSubAssemblys[i] as Assembly;
+                Part currentSubMainPart = currentSubAssembly.GetMainPart() as Part;
+
+                if (currentSubMainPart.Name != currentSubAssembly.Name)
+                {
+                    currentWrongParts.Add(currentSubMainPart);
+                }
+            }
+
             return currentWrongParts;
-        }
-
-        private static String getAssumedPartSuffix(Part part)
-        {
-            if (part is Tekla.Structures.Model.Beam)
-            {
-                var partProfile = (part.Profile as Profile).ProfileString;
-
-                if (partProfile.Contains("BL"))
-                {
-                    return "S";
-                }
-                if (partProfile.Contains("PL"))
-                {
-                    return "S";
-                }
-
-                return "P";
-                
-            }
-            if (part is Tekla.Structures.Model.ContourPlate)
-            {
-                return "S";
-            }
-
-            return "KONTROLLIDA";
-
         }
 
         private static void generateReportFromWrongParts(ArrayList allWrongParts)
@@ -129,14 +79,14 @@ namespace Tekla.Technology.Akit.UserScript
             {
                 var ModelSelector = new Tekla.Structures.Model.UI.ModelObjectSelector();
                 ModelSelector.Select(allWrongParts);
-                
+
                 try
                 {
                     string path = @"Reports";
                     if (!System.IO.Directory.Exists(path))
                     {
                         System.IO.Directory.CreateDirectory(path);
-                        
+
                     }
 
                     Operation.CreateReportFromSelected("P_Select_Part_Position_with_ID", "error_report.xsr", "Report for Assembly prefix errors", "", "");
