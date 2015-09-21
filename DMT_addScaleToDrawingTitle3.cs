@@ -28,6 +28,7 @@ namespace Tekla.Technology.Akit.UserScript
             {
                 var currentDrawing = SelectedDrawings.Current as Drawing;
 
+                MyDrawingHandler.SetActiveDrawing(currentDrawing, false);
                 DrawingObjectEnumerator ViewEnum = currentDrawing.GetSheet().GetViews();
 
                 double highestScale = 0;
@@ -43,9 +44,11 @@ namespace Tekla.Technology.Akit.UserScript
                     }
                 }
 
+                MyDrawingHandler.CloseActiveDrawing(false);
+
                 currentDrawing.Title3 = "1:" + highestScale.ToString();
                 currentDrawing.Modify();
-                
+
             }
 
             new Model().CommitChanges();
