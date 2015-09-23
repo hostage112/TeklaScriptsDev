@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Tekla.Structures.Drawing;
 using Tekla.Structures.Drawing.UI;
 using Tekla.Structures.Model;
+using TSM = Tekla.Structures.Model;
 
 namespace Tekla.Technology.Akit.UserScript
 {
@@ -13,39 +14,64 @@ namespace Tekla.Technology.Akit.UserScript
     {
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            new NameToDrawingTitle();
+            NameToDrawingTitle program = new NameToDrawingTitle();
+            program.main();
+
         }
     }
 
     public class NameToDrawingTitle
     {
-        public NameToDrawingTitle()
-        {
-            Model MyModel = new Model();
+        private Model _myModel = new TSM.Model();
 
+        public void main()
+        {
+            DrawingEnumerator selectedDrawings = getSelectedDrawings();
+            ArrayList selectedCastUnitDrawings = getSelectedCastUnitDrawing(selectedDrawings);
+
+            foreach (CastUnitDrawing currentDrawing in selectedCastUnitDrawings)
+            {
+                changeDrawingName(currentDrawing);
+            }
+
+            _myModel.CommitChanges();
+
+            MessageBox.Show("Valitud " + selectedDrawings.GetSize() + " joonist." + Environment.NewLine +
+                "Muudetud " + selectedCastUnitDrawings.Count.ToString() + " joonise nime");
+        }
+
+        private DrawingEnumerator getSelectedDrawings()
+        {
             DrawingHandler MyDrawingHandler = new DrawingHandler();
             DrawingEnumerator SelectedDrawings = MyDrawingHandler.GetDrawingSelector().GetSelected();
 
-            while (SelectedDrawings.MoveNext())
-            {
-                if (SelectedDrawings.Current is Tekla.Structures.Drawing.CastUnitDrawing)
-                {
-                    var currentCastUnitDrawing = SelectedDrawings.Current as Tekla.Structures.Drawing.CastUnitDrawing;
-                    var currentModelObject = MyModel.SelectModelObject(currentCastUnitDrawing.CastUnitIdentifier);
-                    var currentAssembly = currentModelObject as Tekla.Structures.Model.Assembly;
-                    var currentMainPart = currentAssembly.GetMainPart() as Tekla.Structures.Model.Part;
-                    currentCastUnitDrawing.Name = currentMainPart.Name;
-                    currentCastUnitDrawing.Modify();
-                }
-                else
-                {
-                    MessageBox.Show("Vale joonise tyyp");
-                }
+            return SelectedDrawings;
+        }
 
+        private ArrayList getSelectedCastUnitDrawing(DrawingEnumerator selectedDrawings)
+        {
+            ArrayList selectedCastUnitDrawings = new ArrayList();
+
+            while (selectedDrawings.MoveNext())
+            {
+                if (selectedDrawings.Current is CastUnitDrawing)
+                {
+                    selectedCastUnitDrawings.Add(selectedDrawings.Current);
+                }
             }
 
-            MyModel.CommitChanges();
-
+            return selectedCastUnitDrawings;
         }
+
+        private void changeDrawingName(CastUnitDrawing currentDrawing)
+        {
+            var currentModelObject = _myModel.SelectModelObject(currentDrawing.CastUnitIdentifier);
+            TSM.Assembly currentAssembly = currentModelObject as Assembly;
+            TSM.Part currentMainPart = currentAssembly.GetMainPart() as TSM.Part;
+            currentDrawing.Name = currentMainPart.Name;
+
+            currentDrawing.Modify();
+        }
+
     }
 }

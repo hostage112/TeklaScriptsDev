@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Windows.Forms;
 using Tekla.Structures.Model;
+using TSM = Tekla.Structures.Model;
 
 namespace Tekla.Technology.Akit.UserScript
 {
@@ -10,54 +12,94 @@ namespace Tekla.Technology.Akit.UserScript
     {
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            new AssemblyToSubAssembly();
+            Model myModel = new Model();
+
+            AssemblyToSubAssembly program = new AssemblyToSubAssembly();
+            program.main();
+
+            myModel.CommitChanges();
         }
     }
 
     public class AssemblyToSubAssembly
     {
-        public AssemblyToSubAssembly()
-        {
-            //Get selected objects and put them in an enumerator/container
-            var selector = new Tekla.Structures.Model.UI.ModelObjectSelector();
-            var selectedAssemblyEnum = selector.GetSelectedObjects();
+        private int _wrongPartsCount = 0;
 
-            //Cycle through selected objects
-            while (selectedAssemblyEnum.MoveNext())
+        public void main()
+        {
+            ModelObjectEnumerator selectedObjects = getSelectedObjects();
+            ArrayList selectedAssemblys = getSelectedAssemblys(selectedObjects);
+
+            foreach (Assembly currentAssembly in selectedAssemblys)
             {
-                if (selectedAssemblyEnum.Current is Tekla.Structures.Model.Assembly)
+                checkCurrentAssembly(currentAssembly);
+            }
+
+            MessageBox.Show("Kontrollitud " + selectedAssemblys.Count.ToString() + " assembly." + Environment.NewLine +
+                "Tõstetub ümber " + _wrongPartsCount.ToString() + " vigast elementi.");
+        }
+
+        private ModelObjectEnumerator getSelectedObjects()
+        {
+            var selector = new TSM.UI.ModelObjectSelector();
+            ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
+
+            return selectionEnum;
+        }
+
+        private ArrayList getSelectedAssemblys(ModelObjectEnumerator selectedObjects)
+        {
+            ArrayList selectedAssemblys = new ArrayList();
+
+            while (selectedObjects.MoveNext())
+            {
+                if (selectedObjects.Current is Assembly)
                 {
-                    var currentAssembly = selectedAssemblyEnum.Current as Assembly;
-                    checkSecondaryParts(currentAssembly);
+                    selectedAssemblys.Add(selectedObjects.Current);
                 }
             }
 
-            new Model().CommitChanges();
-
+            return selectedAssemblys;
         }
 
-        private static void checkSecondaryParts(Assembly assembly)
+        private void checkCurrentAssembly(Assembly assembly)
         {
-            var mainPart = assembly.GetMainPart() as Part;
-            var secondaryParts = assembly.GetSecondaries();
+            ArrayList wrongParts = findWrongParts(assembly);
 
-            for (int i = secondaryParts.Count - 1; i >= 0; i--)
+            foreach (Part part in wrongParts)
             {
-                var currentPart = secondaryParts[i] as Part;
-                if (currentPart.Name != mainPart.Name)
-                {
-                    changePartAssemblyToSubAssembly(currentPart, assembly);
-                }
+                changePartToSubAssembly(part, assembly);
             }
         }
 
-        private static void changePartAssemblyToSubAssembly(Part part, Assembly assembly)
+        private ArrayList findWrongParts(Assembly assembly)
+        {
+            Part mainPart = assembly.GetMainPart() as Part;
+            ArrayList secondaryParts = new ArrayList(assembly.GetSecondaries());
+            ArrayList wrongParts = new ArrayList();
+
+            foreach (Part currentPart in secondaryParts)
+            {
+                if (currentPart.Class != mainPart.Class)
+                {
+                    wrongParts.Add(currentPart);
+                }
+            }
+
+            return wrongParts;
+        }
+
+        private void changePartToSubAssembly(Part part, Assembly assembly)
         {
             assembly.Remove(part);
             assembly.Modify();
-            var partNewAssembly = part.GetAssembly() as Assembly;
+            part.Modify();
+
+            Assembly partNewAssembly = part.GetAssembly() as Assembly;
+
             assembly.Add(partNewAssembly);
             assembly.Modify();
+            _wrongPartsCount += 1;
         }
     }
 }

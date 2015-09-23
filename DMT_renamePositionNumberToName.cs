@@ -1,41 +1,76 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Windows.Forms;
 using Tekla.Structures.Model;
+using TSM = Tekla.Structures.Model;
+
+//KASUTAMINE:
+//Macro asendab PART tyypi elemendi nime tema enda Position Numbriga
+//Elemendid valida 1 valikuga
+//Võib valida mittu elementi korraga
 
 namespace Tekla.Technology.Akit.UserScript
 {
-
     public class Script
     {
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            new PositionNumberToName();
+            Model myModel = new Model();
+            PositionNumberToName.main();
+            myModel.CommitChanges();
         }
     }
 
-    public class PositionNumberToName
+    public static class PositionNumberToName
     {
-        public PositionNumberToName()
+        public static void main()
         {
-            var selector = new Tekla.Structures.Model.UI.ModelObjectSelector();
-            var myEnum = selector.GetSelectedObjects();
+            ModelObjectEnumerator selectedObjects = getSelectedObjects();
+            ArrayList selectedParts = getSelectedParts(selectedObjects);
 
-            while (myEnum.MoveNext())
+            foreach (Part currentPart in selectedParts)
             {
-                if (myEnum.Current is Tekla.Structures.Model.Part)
-                {
-                    var myPart = myEnum.Current as Part;
+                changePartName(currentPart);
+            }
 
-                    var castUnitPos = string.Empty;
-                    myPart.GetReportProperty("CAST_UNIT_POS", ref castUnitPos);
-                    myPart.Name = castUnitPos;
-                    myPart.Modify();
+            MessageBox.Show("Valitud " + selectedObjects.GetSize() + " objekti." + Environment.NewLine +
+                "Muudetud " + selectedParts.Count.ToString() + " elemendi nime.");
+        }
+
+        private static ModelObjectEnumerator getSelectedObjects()
+        {
+            var selector = new TSM.UI.ModelObjectSelector();
+            ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
+
+            return selectionEnum;
+        }
+
+        private static ArrayList getSelectedParts(ModelObjectEnumerator selectedObjects)
+        {
+            ArrayList selectedParts = new ArrayList();
+
+            while (selectedObjects.MoveNext())
+            {
+                if (selectedObjects.Current is Part)
+                {
+                    selectedParts.Add(selectedObjects.Current);
                 }
             }
 
-            new Model().CommitChanges();
-
+            return selectedParts;
         }
+
+        private static void changePartName(Part currentPart)
+        {
+            var castUnitPos = string.Empty;
+            currentPart.GetReportProperty("CAST_UNIT_POS", ref castUnitPos);
+
+            castUnitPos = castUnitPos.Replace("(?)", "");
+
+            currentPart.Name = castUnitPos;
+            currentPart.Modify();
+        }
+
     }
 }
