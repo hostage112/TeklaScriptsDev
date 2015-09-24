@@ -22,10 +22,10 @@ namespace Tekla.Technology.Akit.UserScript
             string stringStyle = "000";
             //(EB-1-1)(000+1) = EB-1-1001
 
-            Model MyModel = new Model();
+            Model myModel = new Model();
             NameNumbering program = new NameNumbering(userPrefix, startNumber, stringStyle);
             program.main();
-            MyModel.CommitChanges();
+            myModel.CommitChanges();
         }
     }
 

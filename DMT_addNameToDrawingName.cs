@@ -31,7 +31,8 @@ namespace Tekla.Technology.Akit.UserScript
 
             foreach (CastUnitDrawing currentDrawing in selectedCastUnitDrawings)
             {
-                changeDrawingName(currentDrawing);
+                string objectName = getObjectName(currentDrawing);
+                changeDrawingName(currentDrawing, objectName);
             }
 
             _myModel.CommitChanges();
@@ -42,10 +43,10 @@ namespace Tekla.Technology.Akit.UserScript
 
         private DrawingEnumerator getSelectedDrawings()
         {
-            DrawingHandler MyDrawingHandler = new DrawingHandler();
-            DrawingEnumerator SelectedDrawings = MyDrawingHandler.GetDrawingSelector().GetSelected();
+            DrawingHandler myDrawingHandler = new DrawingHandler();
+            DrawingEnumerator selectedDrawings = myDrawingHandler.GetDrawingSelector().GetSelected();
 
-            return SelectedDrawings;
+            return selectedDrawings;
         }
 
         private ArrayList getSelectedCastUnitDrawing(DrawingEnumerator selectedDrawings)
@@ -63,15 +64,19 @@ namespace Tekla.Technology.Akit.UserScript
             return selectedCastUnitDrawings;
         }
 
-        private void changeDrawingName(CastUnitDrawing currentDrawing)
+        private string getObjectName(CastUnitDrawing currentDrawing)
         {
             var currentModelObject = _myModel.SelectModelObject(currentDrawing.CastUnitIdentifier);
             TSM.Assembly currentAssembly = currentModelObject as Assembly;
             TSM.Part currentMainPart = currentAssembly.GetMainPart() as TSM.Part;
-            currentDrawing.Name = currentMainPart.Name;
 
-            currentDrawing.Modify();
+            return currentMainPart.Name;
         }
 
+        private void changeDrawingName(CastUnitDrawing currentDrawing, string objectName)
+        {
+            currentDrawing.Name = objectName;
+            currentDrawing.Modify();
+        }
     }
 }

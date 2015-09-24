@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Windows.Forms;
 using Tekla.Structures.Model;
+using TSM = Tekla.Structures.Model;
 using Tekla.Structures.Model.Operations;
 
 namespace Tekla.Technology.Akit.UserScript
@@ -12,40 +13,67 @@ namespace Tekla.Technology.Akit.UserScript
     {
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            new AssemblyPartsForPrefixErrors();
+            Model myModel = new Model();
+            AssemblyPartsForPrefixErrors.main();
+            myModel.CommitChanges();
         }
     }
 
     public class AssemblyPartsForPrefixErrors
     {
-        public AssemblyPartsForPrefixErrors()
+        public static void main()
         {
-            var allWrongParts = new ArrayList();
-            
-            var selector = new Tekla.Structures.Model.UI.ModelObjectSelector();
-            var selectedAssemblyEnum = selector.GetSelectedObjects();
-            
-            while (selectedAssemblyEnum.MoveNext())
+            ArrayList allWrongParts = new ArrayList();
+
+            ModelObjectEnumerator selectedObjects = getSelectedObjects();
+            ArrayList selectedAssemblys = getSelectedAssemblys(selectedObjects);
+
+
+            foreach (Assembly currentAssembly in selectedAssemblys)
             {
-                if (selectedAssemblyEnum.Current is Tekla.Structures.Model.Assembly)
+                var currentWrongParts = checkCurrentAssembly(currentAssembly);
+                allWrongParts.AddRange(currentWrongParts);
+            }
+
+            if (allWrongParts.Count > 0)
+            {
+                generateReportFromWrongParts(allWrongParts);
+            }
+
+            MessageBox.Show("Kontrollitud " + selectedAssemblys.Count.ToString() + " assembly." + Environment.NewLine +
+                "Leitud " + allWrongParts.Count + " vigast elementi.");
+        }
+
+        private static ModelObjectEnumerator getSelectedObjects()
+        {
+            var selector = new TSM.UI.ModelObjectSelector();
+            ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
+
+            return selectionEnum;
+        }
+
+        private static ArrayList getSelectedAssemblys(ModelObjectEnumerator selectedObjects)
+        {
+            ArrayList selectedAssemblys = new ArrayList();
+
+            while (selectedObjects.MoveNext())
+            {
+                if (selectedObjects.Current is Assembly)
                 {
-                    var currentWrongParts = checkCurrentAssembly(selectedAssemblyEnum.Current as Assembly);
-                    allWrongParts.AddRange(currentWrongParts);
+                    selectedAssemblys.Add(selectedObjects.Current);
                 }
             }
 
-            generateReportFromWrongParts(allWrongParts);
-
-            new Model().CommitChanges();
+            return selectedAssemblys;
         }
 
         private static ArrayList checkCurrentAssembly(Assembly assembly)
         {
-            var currentWrongParts = new ArrayList();
+            ArrayList currentWrongParts = new ArrayList();
 
-            var subAssemblyWrongParts = checkSubAssemblys(assembly);
+            ArrayList subAssemblyWrongParts = checkSubAssemblys(assembly);
             currentWrongParts.AddRange(subAssemblyWrongParts);
-            var currentAssemblyWrongParts = checkPartsOfAssembly(assembly);
+            ArrayList currentAssemblyWrongParts = checkPartsOfAssembly(assembly);
             currentWrongParts.AddRange(currentAssemblyWrongParts);
 
             return currentWrongParts;
@@ -53,16 +81,13 @@ namespace Tekla.Technology.Akit.UserScript
 
         private static ArrayList checkSubAssemblys(Assembly assembly)
         {
-            var currentWrongParts = new ArrayList();
+            ArrayList currentWrongParts = new ArrayList();
+            ArrayList allSubAssemblys = assembly.GetSubAssemblies();
 
-            var allSubAssemblys = assembly.GetSubAssemblies();
-            if (allSubAssemblys.Count > 0)
+            foreach (Assembly subAssembly in allSubAssemblys)
             {
-                for (int i = 0; i < allSubAssemblys.Count; i++)
-                {
-                    var subWrongParts = checkCurrentAssembly(allSubAssemblys[i] as Assembly);
-                    currentWrongParts.AddRange(subWrongParts);
-                }
+                ArrayList subWrongParts = checkCurrentAssembly(subAssembly);
+                currentWrongParts.AddRange(subWrongParts);
             }
 
             return currentWrongParts;
@@ -70,28 +95,32 @@ namespace Tekla.Technology.Akit.UserScript
 
         private static ArrayList checkPartsOfAssembly(Assembly assembly)
         {
-            var currentWrongParts = new ArrayList();
+            ArrayList currentWrongParts = new ArrayList();
 
-            var assemblyPrefix = string.Empty;
+            string assemblyPrefix = string.Empty;
             assembly.GetReportProperty("ASSEMBLY_PREFIX", ref assemblyPrefix);
 
-            var allParts = assembly.GetSecondaries();
+            ArrayList allParts = assembly.GetSecondaries();
             allParts.Add(assembly.GetMainPart());
 
-            for (int i = 0; i < allParts.Count; i++)
+            foreach (Part currentPart in allParts)
             {
-                var currentPart = allParts[i] as Part;
-
-                var partPrefix = string.Empty;
+                string partPrefix = string.Empty;
                 currentPart.GetReportProperty("PART_PREFIX", ref partPrefix);
+                string assumedPrefix = assemblyPrefix + getAssumedPartSuffix(currentPart);
 
-                if (!(partPrefix == assemblyPrefix + getAssumedPartSuffix(currentPart)))
+                if (isWrong(partPrefix, assumedPrefix))
                 {
                     currentWrongParts.Add(currentPart);
                 }
             }
 
             return currentWrongParts;
+        }
+
+        private static bool isWrong(string partPrefix, string assumedPrefix)
+        {
+            return !(partPrefix == assumedPrefix);
         }
 
         private static String getAssumedPartSuffix(Part part)
@@ -123,29 +152,23 @@ namespace Tekla.Technology.Akit.UserScript
 
         private static void generateReportFromWrongParts(ArrayList allWrongParts)
         {
-            MessageBox.Show("Number of wrong parts: " + (allWrongParts.Count).ToString());
-
-            if (allWrongParts.Count > 0)
-            {
-                var ModelSelector = new Tekla.Structures.Model.UI.ModelObjectSelector();
-                ModelSelector.Select(allWrongParts);
+            var ModelSelector = new Tekla.Structures.Model.UI.ModelObjectSelector();
+            ModelSelector.Select(allWrongParts);
                 
-                try
+            try
+            {
+                string path = @"Reports";
+                if (!System.IO.Directory.Exists(path))
                 {
-                    string path = @"Reports";
-                    if (!System.IO.Directory.Exists(path))
-                    {
-                        System.IO.Directory.CreateDirectory(path);
-                        
-                    }
+                    System.IO.Directory.CreateDirectory(path);
+                }
 
-                    Operation.CreateReportFromSelected("P_Select_Part_Position_with_ID", "error_report.xsr", "Report for Assembly prefix errors", "", "");
-                    Operation.DisplayReport("error_report.xsr");
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.ToString());
-                }
+                Operation.CreateReportFromSelected("P_Select_Part_Position_with_ID", "error_report.xsr", "Report for Assembly prefix errors", "", "");
+                Operation.DisplayReport("error_report.xsr");
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
             }
         }
     }
