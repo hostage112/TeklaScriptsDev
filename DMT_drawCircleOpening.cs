@@ -31,6 +31,10 @@ namespace Tekla.Technology.Akit.UserScript
     public class CircleOpening
     {
         private DrawingHandler _drawingHandler;
+        private Point firstPoint;
+        private Point secondPoint;
+        private Point thirdPoint;
+        private Point fourthPoint;
 
         public CircleOpening(DrawingHandler drawingHandler)
         {
@@ -47,13 +51,8 @@ namespace Tekla.Technology.Akit.UserScript
                     Point userRadius = null;
                     ViewBase view = null;
 
-                    Point firstPoint = null;
-                    Point secondPoint = null;
-                    Point thirdPoint = null;
-                    Point fourthPoint = null;
-                    
                     getPoints(out userCenter, out userRadius, out view);
-                    calcPoints(userCenter, userRadius, out firstPoint, out secondPoint, out thirdPoint, out fourthPoint);
+                    calcPoints(userCenter, userRadius);
                     drawLine(firstPoint, secondPoint, view);
                     drawLine(thirdPoint, fourthPoint, view);
                 }
@@ -70,21 +69,17 @@ namespace Tekla.Technology.Akit.UserScript
             picker.PickTwoPoints("Vali ringi keskpunkt", "Vali punkt ringi kontuuril", out firstPoint, out secondPoint, out view);
         }
 
-        private void calcPoints(Point userCenter, Point userRadius, out Point firstPoint, out Point secondPoint, out Point thirdPoint, out Point fourthPoint)
+        private void calcPoints(Point userCenter, Point userRadius)
         {
             double Rx = userCenter.X - userRadius.X;
             double Ry = userCenter.Y - userRadius.Y;
             double R = Math.Sqrt(Rx * Rx + Ry * Ry);
             double COS45 = 0.7071068;
 
-            Point a1 = new Point(userCenter.X - R * COS45, userCenter.Y - R * COS45);
-            firstPoint = a1;
-            Point a2 = new Point(userCenter.X + R * COS45, userCenter.Y + R * COS45);
-            secondPoint = a2;
-            Point a3 = new Point(userCenter.X + R * COS45, userCenter.Y - R * COS45);
-            thirdPoint = a3;
-            Point a4 = new Point(userCenter.X - R * COS45, userCenter.Y + R * COS45);
-            fourthPoint = a4;
+            firstPoint = new Point(userCenter.X - R * COS45, userCenter.Y - R * COS45);
+            secondPoint = new Point(userCenter.X + R * COS45, userCenter.Y + R * COS45);
+            thirdPoint = new Point(userCenter.X + R * COS45, userCenter.Y - R * COS45);
+            fourthPoint = new Point(userCenter.X - R * COS45, userCenter.Y + R * COS45);
 
         }
 

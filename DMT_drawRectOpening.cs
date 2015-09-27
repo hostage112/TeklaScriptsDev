@@ -31,6 +31,10 @@ namespace Tekla.Technology.Akit.UserScript
     public class RectOpening
     {
         private DrawingHandler _drawingHandler;
+        private Point firstPoint;
+        private Point secondPoint;
+        private Point thirdPoint;
+        private Point fourthPoint;
 
         public RectOpening(DrawingHandler drawingHandler)
         {
@@ -43,14 +47,12 @@ namespace Tekla.Technology.Akit.UserScript
             {
                 while (true)
                 {
-                    Point firstPoint = null;
-                    Point secondPoint = null;
-                    Point thirdPoint = null;
-                    Point fourthPoint = null;
+                    Point userPoint1 = null;
+                    Point userPoint2 = null;
                     ViewBase view = null;
 
-                    getPoints(out firstPoint, out secondPoint, out view);
-                    calcPoints(firstPoint, secondPoint, out thirdPoint, out fourthPoint);
+                    getPoints(out userPoint1, out userPoint2, out view);
+                    calcPoints(userPoint1, userPoint2);
                     drawLine(firstPoint, secondPoint, view);
                     drawLine(thirdPoint, fourthPoint, view);
                 }
@@ -67,13 +69,12 @@ namespace Tekla.Technology.Akit.UserScript
             picker.PickTwoPoints("Vali esimene punkt", "Vali teine punkt", out firstPoint, out secondPoint, out view);
         }
 
-        private void calcPoints(Point firstPoint, Point secondPoint, out Point thirdPoint, out Point fourthPoint)
+        private void calcPoints(Point userPoint1, Point userPoint2)
         {
-            Point calc1 = new Point(firstPoint.X, secondPoint.Y);
-            thirdPoint = calc1;
-
-            Point calc2 = new Point(secondPoint.X, firstPoint.Y);
-            fourthPoint = calc2;
+            firstPoint = userPoint1;
+            secondPoint = userPoint2;
+            thirdPoint = new Point(firstPoint.X, secondPoint.Y);
+            fourthPoint = new Point(secondPoint.X, firstPoint.Y);
 
         }
 
