@@ -86,7 +86,7 @@ namespace Tekla.Technology.Akit.UserScript
         private void drawLine(Point p1, Point p2, ViewBase view)
         {
             TSD.Line newLine = new TSD.Line(view, p1, p2);
-            LineTypeAttributes lineParams = new LineTypeAttributes(LineTypes.SolidLine, DrawingColors.Red);
+            LineTypeAttributes lineParams = new LineTypeAttributes(LineTypes.SolidLine, DrawingColors.Black);
             newLine.Attributes.Line = lineParams;
             newLine.Insert();
         }
