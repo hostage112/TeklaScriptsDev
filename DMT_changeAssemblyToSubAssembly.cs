@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
 using Tekla.Structures.Model;
@@ -25,11 +26,11 @@ namespace Tekla.Technology.Akit.UserScript
             int wrongPartsCount = 0;
 
             ModelObjectEnumerator selectedObjects = getSelectedObjects();
-            ArrayList selectedAssemblys = getSelectedAssemblys(selectedObjects);
+            List<Assembly> selectedAssemblys = getSelectedAssemblys(selectedObjects);
 
             foreach (Assembly currentAssembly in selectedAssemblys)
             {
-                ArrayList wrongParts = findWrongParts(currentAssembly);
+                List<Part> wrongParts = findWrongParts(currentAssembly);
                 fixWrongParts(currentAssembly, wrongParts);
                 wrongPartsCount += wrongParts.Count;
             }
@@ -46,26 +47,26 @@ namespace Tekla.Technology.Akit.UserScript
             return selectionEnum;
         }
 
-        private static ArrayList getSelectedAssemblys(ModelObjectEnumerator selectedObjects)
+        private static List<Assembly> getSelectedAssemblys(ModelObjectEnumerator selectedObjects)
         {
-            ArrayList selectedAssemblys = new ArrayList();
+            List<Assembly> selectedAssemblys = new List<Assembly>();
 
             while (selectedObjects.MoveNext())
             {
                 if (selectedObjects.Current is Assembly)
                 {
-                    selectedAssemblys.Add(selectedObjects.Current);
+                    selectedAssemblys.Add(selectedObjects.Current as Assembly);
                 }
             }
 
             return selectedAssemblys;
         }
 
-        private static ArrayList findWrongParts(Assembly assembly)
+        private static List<Part> findWrongParts(Assembly assembly)
         {
             Part mainPart = assembly.GetMainPart() as Part;
             ArrayList secondaryParts = new ArrayList(assembly.GetSecondaries());
-            ArrayList wrongParts = new ArrayList();
+            List<Part> wrongParts = new List<Part>();
 
             foreach (Part currentPart in secondaryParts)
             {
@@ -78,7 +79,7 @@ namespace Tekla.Technology.Akit.UserScript
             return wrongParts;
         }
 
-        private static void fixWrongParts(Assembly assembly, ArrayList wrongParts)
+        private static void fixWrongParts(Assembly assembly, List<Part> wrongParts)
         {
             foreach (Part part in wrongParts)
             {
