@@ -19,7 +19,7 @@ namespace Tekla.Technology.Akit.UserScript
         }
     }
 
-    public class AssemblyToSubAssembly
+    public static class AssemblyToSubAssembly
     {
         public static void main()
         {

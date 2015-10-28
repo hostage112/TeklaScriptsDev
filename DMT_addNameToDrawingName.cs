@@ -67,7 +67,7 @@ namespace Tekla.Technology.Akit.UserScript
         private string getObjectName(CastUnitDrawing currentDrawing)
         {
             var currentModelObject = _myModel.SelectModelObject(currentDrawing.CastUnitIdentifier);
-            TSM.Assembly currentAssembly = currentModelObject as Assembly;
+            TSM.Assembly currentAssembly = currentModelObject as TSM.Assembly;
             TSM.Part currentMainPart = currentAssembly.GetMainPart() as TSM.Part;
 
             return currentMainPart.Name;
