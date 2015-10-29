@@ -126,7 +126,7 @@ namespace Tekla.Technology.Akit.UserScript
                     throw new System.Exception();
                 }
 
-                int addon = 0;
+                int addon = 1;
                 while (System.IO.File.Exists(position + ".ifc"))
                 {
                     if (position.EndsWith(@"(" + (addon - 1).ToString() + @")"))
