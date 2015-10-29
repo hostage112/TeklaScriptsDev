@@ -103,20 +103,43 @@ namespace Tekla.Technology.Akit.UserScript
                 var selector = new TSM.UI.ModelObjectSelector();
                 selector.Select(currentAssemblySelect);
 
-                string name = getFileName(assembly);
-                exportIFC(name);
+                try
+                {
+                    string name = getFileName(assembly);
+                    exportIFC(name);
+                }
+                catch
+                {
+                    MessageBox.Show("Element sisaldab keelatuid märke");
+                }
             }
 
             private static string getFileName(Assembly assembly)
             {
+                string position = null;
                 assembly.GetReportProperty("ASSEMBLY_POS", ref position);
-                //position = position.Replace("/", "_");
-                //position = position.Replace("(?)", "_");
+                position = position.Replace("/", "_");
+                position = position.Replace("?", "_");
 
-                if (position.Contains("/") || position.Contains("?") || position.Contains("(") || position.Contains(")"))
+                if (position.Contains("/") || position.Contains("?"))
                 {
-                    MessageBox.Show("Element sisaldab keelatuid märke" + Environment.NewLine + position);
+                    throw new System.Exception();
                 }
+
+                int addon = 0;
+                while (System.IO.File.Exists(position + ".ifc"))
+                {
+                    if (position.EndsWith(@"(" + (addon - 1).ToString() + @")"))
+                    {
+                        int removeIndex = position.Length - 3;
+                        position = position.Remove(removeIndex);
+                    }
+
+                    position = position + @"(" + addon.ToString() + @")";
+                    addon++;
+                }
+
+                return position;
             }
 
             private static void selectInitialObjects(List<Assembly> selectedAssemblys)
