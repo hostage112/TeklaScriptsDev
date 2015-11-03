@@ -15,12 +15,12 @@ namespace Tekla.Technology.Akit.UserScript
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
             Model myModel = new Model();
-            NameToDrawingUDAComment.main();
+            NameToDrawingTitle3.main();
             myModel.CommitChanges();
         }
     }
 
-    public static class NameToDrawingUDAComment
+    public static class NameToDrawingTitle3
     {
         public static void main()
         {
@@ -29,11 +29,11 @@ namespace Tekla.Technology.Akit.UserScript
             foreach (Drawing currentDrawing in selectedDrawings)
             {
                 double highestScale = getHighestScale(currentDrawing);
-                setScaleToComment(currentDrawing, highestScale);
+                setScaleToTitle3(currentDrawing, highestScale);
             }
 
             MessageBox.Show("Valitud " + selectedDrawings.GetSize() + " joonist." + Environment.NewLine +
-                    "Muudetud " + selectedDrawings.GetSize() + " joonise UDA 'comment'");
+                    "Muudetud " + selectedDrawings.GetSize() + " joonise title3");
 
         }
 
@@ -48,7 +48,9 @@ namespace Tekla.Technology.Akit.UserScript
         private static double getHighestScale(Drawing currentDrawing)
         {
             double highestScale = 0;
+            //DrawingHandler myDrawingHandler = new DrawingHandler();
 
+            //myDrawingHandler.SetActiveDrawing(currentDrawing, false);
             DrawingObjectEnumerator ViewEnum = currentDrawing.GetSheet().GetViews();
             
             foreach (TSD.View currentView in ViewEnum)
@@ -57,13 +59,14 @@ namespace Tekla.Technology.Akit.UserScript
                 highestScale = Math.Max(currentScale, highestScale);
             }
 
+            //myDrawingHandler.CloseActiveDrawing(false);
+
             return highestScale;
         }
 
-        private static void setScaleToComment(Drawing currentDrawing, double highestScale)
+        private static void setScaleToTitle3(Drawing currentDrawing, double highestScale)
         {
-            string scale = "1:" + highestScale.ToString();
-            currentDrawing.SetUserProperty("comment", scale);
+            currentDrawing.Title3 = "1:" + highestScale.ToString();
             currentDrawing.Modify();
         }
     }
