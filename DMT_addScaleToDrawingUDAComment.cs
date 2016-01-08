@@ -6,6 +6,7 @@ using Tekla.Structures.Drawing;
 using TSD = Tekla.Structures.Drawing;
 using Tekla.Structures.Drawing.UI;
 using Tekla.Structures.Model;
+using Tekla.Structures.Geometry3d;
 
 namespace Tekla.Technology.Akit.UserScript
 {
@@ -53,13 +54,33 @@ namespace Tekla.Technology.Akit.UserScript
             
             foreach (TSD.View currentView in ViewEnum)
             {
-                double currentScale = currentView.Attributes.Scale;
-                highestScale = Math.Max(currentScale, highestScale);
+                if (is2Ddrawing(currentView))
+                {
+                    double currentScale = currentView.Attributes.Scale;
+                    highestScale = Math.Max(currentScale, highestScale);
+                }
             }
 
             return highestScale;
         }
 
+        private static bool is2Ddrawing(TSD.View currentView)
+        {
+            CoordinateSystem disp = currentView.DisplayCoordinateSystem as CoordinateSystem;
+            CoordinateSystem viewp = currentView.ViewCoordinateSystem as CoordinateSystem;
+
+            if (disp.AxisX != viewp.AxisX)
+            {
+                return false;
+            }
+
+            if (disp.AxisY != viewp.AxisY)
+            {
+                return false;
+            }
+
+            return true;
+        }
         private static void setScaleToComment(Drawing currentDrawing, double highestScale)
         {
             string scale = "1:" + highestScale.ToString();
