@@ -54,7 +54,7 @@ namespace Tekla.Technology.Akit.UserScript
 
             foreach (TSD.View currentView in ViewEnum)
             {
-                if (is2Ddrawing(currentView))
+                if (isView2D(currentView))
                 {
                     double currentScale = currentView.Attributes.Scale;
                     highestScale = Math.Max(currentScale, highestScale);
@@ -64,17 +64,12 @@ namespace Tekla.Technology.Akit.UserScript
             return highestScale;
         }
 
-        private static bool is2Ddrawing(TSD.View currentView)
+        private static bool isView2D(TSD.View currentView)
         {
             CoordinateSystem disp = currentView.DisplayCoordinateSystem as CoordinateSystem;
             CoordinateSystem viewp = currentView.ViewCoordinateSystem as CoordinateSystem;
 
-            if (disp.AxisX != viewp.AxisX)
-            {
-                return false;
-            }
-
-            if (disp.AxisY != viewp.AxisY)
+            if (disp.AxisX != viewp.AxisX || disp.AxisY != viewp.AxisY)
             {
                 return false;
             }
