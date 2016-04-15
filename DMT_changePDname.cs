@@ -21,36 +21,33 @@ namespace Tekla.Technology.Akit.UserScript
     {
         public PDLength()
         {
+		
+            System.Type[] selectionType = new System.Type[1];
+            selectionType.SetValue(typeof(TSM.CustomPart), 0);
+
             Model myModel = new Model();
-            if (myModel.GetConnectionStatus())
+            ModelObjectEnumerator allObjects = myModel.GetModelObjectSelector().GetAllObjectsWithType(selectionType);
+
+            while (allObjects.MoveNext())
             {
-                ModelObjectEnumerator allObjects = myModel.GetModelObjectSelector().GetAllObjects();
-
-                while (allObjects.MoveNext())
+                if (allObjects.Current is TSM.CustomPart)
                 {
-                    if (allObjects.Current is TSM.CustomPart)
+                    TSM.CustomPart currentComponent = allObjects.Current as TSM.CustomPart;
+                    if (currentComponent.Name == "EB_PD")
                     {
-                        TSM.CustomPart currentComponent = allObjects.Current as TSM.CustomPart;
-                        if (currentComponent.Name == "EB_PD")
-                        {
-                            double curWidth = 0.0;
-                            double curLength = 0.0;
+                        double curWidth = 0.0;
+                        double curLength = 0.0;
 
-                            currentComponent.GetUserProperty("w", ref curWidth);
-                            currentComponent.GetUserProperty("L", ref curLength);
-
-                            string newName = "PD" + curWidth.ToString() + " L=" + curLength.ToString();
-                            currentComponent.SetUserProperty("P1a", newName);
-                            currentComponent.Modify();
-                        }
+                        currentComponent.GetUserProperty("w", ref curWidth);
+                        currentComponent.GetUserProperty("L", ref curLength);
+ 
+						string newName = "PD" + curWidth.ToString() + " L=" + curLength.ToString();
+                        currentComponent.SetUserProperty("P1a", newName);
+                        currentComponent.Modify();
                     }
                 }
-                myModel.CommitChanges();
             }
-            else
-            {
-                MessageBox.Show("Viga yhenduses");
-            }
+            myModel.CommitChanges();
         }
     }
 }
