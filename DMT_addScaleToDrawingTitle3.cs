@@ -16,12 +16,12 @@ namespace Tekla.Technology.Akit.UserScript
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
             Model myModel = new Model();
-            NameToDrawingTitle3.main();
+            ScaleToDrawingTitle3.main();
             myModel.CommitChanges();
         }
     }
 
-    public static class NameToDrawingTitle3
+    public static class ScaleToDrawingTitle3
     {
         public static void main()
         {
