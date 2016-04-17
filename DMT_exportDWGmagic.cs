@@ -8,6 +8,8 @@ using Tekla.Structures.Drawing.UI;
 using Tekla.Structures.Model;
 using Tekla.Structures.Geometry3d;
 
+using System.IO;
+
 namespace Tekla.Technology.Akit.UserScript
 {
     public static class PrintToSize
@@ -36,11 +38,11 @@ namespace Tekla.Technology.Akit.UserScript
         {
             if (size == "a4")
                 return "PDFactoryA4";
-            if (size == "a3")
+            else if (size == "a3")
                 return "PDFactoryA3";
-            if (size == "a2")
+            else if (size == "a2")
                 return "PDFactoryA2";
-            if (size == "a1")
+            else if (size == "a1")
                 return "PDFactoryA1";
 
             return "PDFactoryA0";
@@ -52,12 +54,27 @@ namespace Tekla.Technology.Akit.UserScript
 
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
+            string fileName = "_macroPrintReport.txt";
+
+            try
+            {
+                if (File.Exists(fileName))
+                {
+                    File.Delete(fileName);
+                }
+            }
+            catch { }
+
+
             int drawingNr = 1;
             DrawingEnumerator selectedDrawings = ExportToScale.getSelectedDrawings();
 
             foreach (Drawing currentDrawing in selectedDrawings)
             {
+                string report = "";
                 akit.TableSelect("Drawing_selection", "dia_draw_select_list", drawingNr);
+
+                string elementMark = ExportToScale.getMark(currentDrawing);
                 double scaleFactor = ExportToScale.getHighestScale(currentDrawing);
                 double lineTypeScale = scaleFactor / 4;
 
@@ -67,24 +84,38 @@ namespace Tekla.Technology.Akit.UserScript
                 akit.PushButton("butExport", "diaExportDrawings");
 
                 string paper = PrintToSize.paperSize(currentDrawing);
+                string printerName = "PRINTER_NOT_FOUND";
                 if (!String.IsNullOrEmpty(paper))
                 {
-                    string printerName = PrintToSize.selectPrinter(paper);
+                    printerName = PrintToSize.selectPrinter(paper);
 
                     akit.PopupCallback("acmd_display_plot_dialog", "", "Drawing_selection", "dia_draw_select_list");
                     akit.ListSelect("Plot", "component_list", printerName);
                     akit.PushButton("butPrint", "Plot");
-                    akit.PushButton("cancel_pb", "Plot");
                 }
                 else
                 {
-                    MessageBox.Show("Ei leia sellist paberi suurust");
+                    printerName = "PRINTER_NOT_FOUND";
                 }
-                
+
+                report += elementMark + " ";
+                report += "SCALE: " + scaleFactor.ToString() + " ";
+                report += lineTypeScale.ToString() + " ";
+                report += "PRINTER: " + printerName;
+
+                System.IO.File.AppendAllLines(fileName, new[] { report });
+
                 drawingNr++;
             }
 
+            akit.PushButton("cancel_pb", "Plot");
             akit.PushButton("butCancel", "diaExportDrawings");
+
+            if (File.Exists(fileName))
+            {
+                Process.Start(fileName);
+            }
+            
         }
     }
 
@@ -96,6 +127,10 @@ namespace Tekla.Technology.Akit.UserScript
             DrawingEnumerator selectedDrawings = myDrawingHandler.GetDrawingSelector().GetSelected();
 
             return selectedDrawings;
+        }
+        public static string getMark(Drawing currentDrawing)
+        {
+            return currentDrawing.Mark;
         }
 
         public static double getHighestScale(Drawing currentDrawing)
