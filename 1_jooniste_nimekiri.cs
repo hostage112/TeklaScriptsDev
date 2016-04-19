@@ -42,38 +42,42 @@ namespace Tekla.Technology.Akit.UserScript
             {
                 string name = currentDrawing.Title1;
                 string nr = currentDrawing.Name;
-                string gg = "";
-                currentDrawing.GetUserProperty("REVISION.LAST_NUMBER", ref gg);
-                string newLine = string.Format("{0};{1};{2}", name, nr, gg);
+
+                string dmtDate = "";
+                currentDrawing.GetUserProperty("DR_RESP_DSGNR_DATE", ref dmtDate);
+
+                string newLine = string.Format("{0};{1};{2}", name, nr, dmtDate);
                 csv.AppendLine(newLine);
-                string mark = "";
-                DateLastMark(currentDrawing, ref mark);
+
+                //string mark = "";
+                //DateLastMark(currentDrawing, ref mark);
+
+
                 drawingNr++;
-                MessageBox.Show(newLine + mark);
             }
 
 
             //File.WriteAllText(fileName, csv.ToString());
 
-            if (File.Exists(fileName))
-            {
-                Process.Start(fileName);
-            }
+            //if (File.Exists(fileName))
+            //{
+            //    Process.Start(fileName);
+            //}
             
         }
 
-        public static string DateLastMark(Drawing croquis, out string mark)
-        {
-            DrawingHandler drawingHandler = new DrawingHandler();
-            Type drawingType = croquis.GetType();
-            PropertyInfo propertyInfo = drawingType.GetProperty("Identifier", BindingFlags.Instance | BindingFlags.NonPublic);
-            object value = propertyInfo.GetValue(croquis, null);
+        //public static string DateLastMark(Drawing croquis, out string mark)
+        //{
+        //    DrawingHandler drawingHandler = new DrawingHandler();
+        //    Type drawingType = croquis.GetType();
+        //    PropertyInfo propertyInfo = drawingType.GetProperty("Identifier", BindingFlags.Instance | BindingFlags.NonPublic);
+        //    object value = propertyInfo.GetValue(croquis, null);
 
-            Identifier identifier = (Identifier)value;
-            Beam fakeBeam = new Beam { Identifier = identifier };
-            string RevisionMark = "";
-            fakeBeam.GetReportProperty("REVISION.LAST_MARK", ref RevisionMark);
+        //    Identifier identifier = (Identifier)value;
+        //    Beam fakeBeam = new Beam { Identifier = identifier };
+        //    string RevisionMark = "";
+        //    fakeBeam.GetReportProperty("REVISION.LAST_MARK", ref RevisionMark);
 
-        }
+        //}
     }
 }
