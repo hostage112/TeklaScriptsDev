@@ -17,78 +17,59 @@ namespace Tekla.Technology.Akit.UserScript
             ModelObjectEnumerator selectedObjects = getSelectedObjects();
             ArrayList selectedAssemblys = getSelectedAssemblys(selectedObjects);
 
-            foreach (Assembly current in selectedAssemblys)
+            foreach (Assembly currentAssembly in selectedAssemblys)
             {
-                Part currentMainPart = current.GetMainPart() as Part;
-                if (currentMainPart.Name == current.Name)
+                assemblyManager(currentAssembly, akit);
+            }
+        }
+
+        private static void assemblyManager(Assembly currentAssembly, Tekla.Technology.Akit.IScript akit)
+        {
+            ArrayList currentSelection = new ArrayList();
+            currentSelection.Add(currentAssembly);
+
+            var ModelSelector = new TSM.UI.ModelObjectSelector();
+            ModelSelector.Select(currentSelection);
+
+            removeAssemblyPropertys(currentAssembly, akit);
+
+            ArrayList subs = currentAssembly.GetSubAssemblies();
+            foreach (Assembly sub in subs)
+            {
+                assemblyManager(sub, akit);
+            }
+        }
+
+        private static void removeAssemblyPropertys(Assembly currentAssembly, Tekla.Technology.Akit.IScript akit)
+        {
+            akit.Callback("acmd_display_selected_object_dialog", "", "View_01 window_1");
+            Part currentMainPart = currentAssembly.GetMainPart() as Part;
+
+            if (currentMainPart.Material.MaterialString.StartsWith("S"))
+            {
+                akit.ValueChange("steelassembly_1", "AssemblyPrefix", "");
+                akit.ValueChange("steelassembly_1", "AssemblyStartNumber", "");
+                akit.ValueChange("steelassembly_1", "AssemblyName", "");
+                akit.PushButton("modify_button", "steelassembly_1");
+                akit.PushButton("OK_button", "steelassembly_1");
+            }
+            else
+            {
+                if (currentMainPart.CastUnitType == 0)
                 {
-                    ArrayList currentSelection = new ArrayList();
-                    currentSelection.Add(current);
-
-                    var ModelSelector = new TSM.UI.ModelObjectSelector();
-                    ModelSelector.Select(currentSelection);
-
-                    akit.Callback("acmd_display_selected_object_dialog", "", "View_01 window_1");
-
-                    if (currentMainPart.Material.MaterialString.StartsWith("S"))
-                    {
-                        akit.ValueChange("steelassembly_1", "AssemblyName", "");
-                        akit.PushButton("modify_button", "steelassembly_1");
-                        akit.PushButton("OK_button", "steelassembly_1");
-                    }
-                    else
-                    {
-                        if (currentMainPart.CastUnitType == 0)
-                        {
-                            akit.ValueChange("precastassembly_1", "AssemblyName", "");
-                            akit.PushButton("modify_button", "precastassembly_1");
-                            akit.PushButton("OK_button", "precastassembly_1");
-                        }
-                        else
-                        {
-                            akit.ValueChange("insituassembly_1", "AssemblyName", "");
-                            akit.PushButton("modify_button", "insituassembly_1");
-                            akit.PushButton("OK_button", "insituassembly_1");
-                        }
-                    }
+                    akit.ValueChange("precastassembly_1", "AssemblyPrefix", "");
+                    akit.ValueChange("precastassembly_1", "AssemblyStartNumber", "");
+                    akit.ValueChange("precastassembly_1", "AssemblyName", "");
+                    akit.PushButton("modify_button", "precastassembly_1");
+                    akit.PushButton("OK_button", "precastassembly_1");
                 }
-
-                if (currentMainPart.PartNumber.Prefix == current.AssemblyNumber.Prefix)
+                else
                 {
-
-                    akit.Callback("acmd_display_selected_object_dialog", "", "View_01 window_1");
-
-                    ArrayList currentSelection = new ArrayList();
-                    currentSelection.Add(current);
-
-                    var ModelSelector = new TSM.UI.ModelObjectSelector();
-                    ModelSelector.Select(currentSelection);
-
-
-                    if (currentMainPart.Material.MaterialString.StartsWith("S"))
-                    {
-                        akit.ValueChange("steelassembly_1", "AssemblyPrefix", "");
-                        akit.ValueChange("steelassembly_1", "AssemblyStartNumber", "");
-                        akit.PushButton("modify_button", "steelassembly_1");
-                        akit.PushButton("OK_button", "steelassembly_1");
-                    }
-                    else
-                    {
-                        if (currentMainPart.CastUnitType == 0)
-                        {
-                            akit.ValueChange("precastassembly_1", "AssemblyPrefix", "");
-                            akit.ValueChange("precastassembly_1", "AssemblyStartNumber", "");
-                            akit.PushButton("modify_button", "precastassembly_1");
-                            akit.PushButton("OK_button", "precastassembly_1");
-                        }
-                        else
-                        {
-                            akit.ValueChange("insituassembly_1", "AssemblyPrefix", "");
-                            akit.ValueChange("insituassembly_1", "AssemblyStartNumber", "");
-                            akit.PushButton("modify_button", "insituassembly_1");
-                            akit.PushButton("OK_button", "insituassembly_1");
-                        }
-                    }
+                    akit.ValueChange("insituassembly_1", "AssemblyPrefix", "");
+                    akit.ValueChange("insituassembly_1", "AssemblyStartNumber", "");
+                    akit.ValueChange("insituassembly_1", "AssemblyName", "");
+                    akit.PushButton("modify_button", "insituassembly_1");
+                    akit.PushButton("OK_button", "insituassembly_1");
                 }
             }
         }

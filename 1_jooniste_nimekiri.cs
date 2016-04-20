@@ -20,7 +20,7 @@ namespace Tekla.Technology.Akit.UserScript
 
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            string fileName = @"test.txt";
+            string fileName = @"Reports/test.csv";
 
             try
             {
@@ -30,7 +30,6 @@ namespace Tekla.Technology.Akit.UserScript
                 }
             }
             catch { }
-
 
             int drawingNr = 1;
             DrawingHandler myDrawingHandler = new DrawingHandler();
@@ -43,41 +42,51 @@ namespace Tekla.Technology.Akit.UserScript
                 string name = currentDrawing.Title1;
                 string nr = currentDrawing.Name;
 
-                string dmtDate = "";
-                currentDrawing.GetUserProperty("DR_RESP_DSGNR_DATE", ref dmtDate);
+                DateTime dmtDate = new DateTime(1970, 1, 1);
+                int dmtDateSeconds = 0;
+                currentDrawing.GetUserProperty("DR_RESP_DSGNR_DATE", ref dmtDateSeconds);
+                dmtDate = dmtDate.AddSeconds(dmtDateSeconds);
 
-                string newLine = string.Format("{0};{1};{2}", name, nr, dmtDate);
+                DateTime revisionDate = new DateTime(1970, 1, 1);
+                int revisionDateSeconds = 0;
+                string revisionMark = "";
+                DateLastMark(currentDrawing, out revisionMark, out revisionDateSeconds);
+                revisionDate = revisionDate.AddSeconds(revisionDateSeconds);
+
+                string newLine = string.Format("{0} ;{1} ;{2} ;{3} ;{4} ;", name, nr, revisionMark, dmtDate.ToShortDateString(), revisionDate.ToShortDateString());
                 csv.AppendLine(newLine);
 
-                //string mark = "";
-                //DateLastMark(currentDrawing, ref mark);
-
+                //MessageBox.Show(newLine);
 
                 drawingNr++;
             }
 
-
-            //File.WriteAllText(fileName, csv.ToString());
-
-            //if (File.Exists(fileName))
-            //{
-            //    Process.Start(fileName);
-            //}
+            try
+            {
+                File.WriteAllText(fileName, csv.ToString());
+            }
+            catch
+            {
+                MessageBox.Show("write failed");
+            }
             
         }
 
-        //public static string DateLastMark(Drawing croquis, out string mark)
-        //{
-        //    DrawingHandler drawingHandler = new DrawingHandler();
-        //    Type drawingType = croquis.GetType();
-        //    PropertyInfo propertyInfo = drawingType.GetProperty("Identifier", BindingFlags.Instance | BindingFlags.NonPublic);
-        //    object value = propertyInfo.GetValue(croquis, null);
+        public static void DateLastMark(Drawing croquis, out string revisionMark, out int revisionDateSeconds)
+        {
+            DrawingHandler drawingHandler = new DrawingHandler();
+            Type drawingType = croquis.GetType();
+            PropertyInfo propertyInfo = drawingType.GetProperty("Identifier", BindingFlags.Instance | BindingFlags.NonPublic);
+            object value = propertyInfo.GetValue(croquis, null);
+            
+            Identifier identifier = (Identifier)value;
+            Beam fakeBeam = new Beam { Identifier = identifier };
 
-        //    Identifier identifier = (Identifier)value;
-        //    Beam fakeBeam = new Beam { Identifier = identifier };
-        //    string RevisionMark = "";
-        //    fakeBeam.GetReportProperty("REVISION.LAST_MARK", ref RevisionMark);
+            revisionMark = "";
+            fakeBeam.GetReportProperty("REVISION.LAST_MARK", ref revisionMark);
 
-        //}
+            revisionDateSeconds = 0;
+            fakeBeam.GetReportProperty("REVISION.LAST_DATE_CREATE", ref revisionDateSeconds);
+        }
     }
 }
