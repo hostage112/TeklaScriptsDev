@@ -45,7 +45,7 @@ namespace Tekla.Technology.Akit.UserScript
             akit.Callback("acmd_display_selected_object_dialog", "", "View_01 window_1");
             Part currentMainPart = currentAssembly.GetMainPart() as Part;
 
-            if (currentMainPart.Material.MaterialString.StartsWith("S"))
+            if (!currentMainPart.Material.MaterialString.StartsWith("C"))
             {
                 akit.ValueChange("steelassembly_1", "AssemblyPrefix", "");
                 akit.ValueChange("steelassembly_1", "AssemblyStartNumber", "");
