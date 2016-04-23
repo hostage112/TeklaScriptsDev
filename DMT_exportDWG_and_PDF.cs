@@ -24,6 +24,8 @@ namespace Tekla.Technology.Akit.UserScript
                 paper = "a4";
             else if ((width % 420 == 0) && height == 297)
                 paper = "a3";
+            else if ((width % 840 == 0) && height == 594)
+                paper = "a3";
             else if ((width % 594 == 0) && height == 420)
                 paper = "a2";
             else if ((width % 841 == 0) && height == 594)
@@ -37,15 +39,17 @@ namespace Tekla.Technology.Akit.UserScript
         public static string selectPrinter(string size)
         {
             if (size == "a4")
-                return "PDFactoryA4";
+                return "PDF_A4";
             else if (size == "a3")
-                return "PDFactoryA3";
+                return "PDF_A3";
             else if (size == "a2")
-                return "PDFactoryA2";
+                return "PDF_A2";
             else if (size == "a1")
-                return "PDFactoryA1";
+                return "PDF_A1";
+            else if (size == "a0")
+                return "PDF_A0";
 
-            return "PDFactoryA0";
+            return "PDF_A0";
         }
     }
 
@@ -54,7 +58,7 @@ namespace Tekla.Technology.Akit.UserScript
 
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            string fileName = "_macroPrintReport.txt";
+            string fileName = @"PlotFiles\_macroPrintReport.txt";
 
             try
             {
@@ -68,9 +72,11 @@ namespace Tekla.Technology.Akit.UserScript
 
             int drawingNr = 1;
             DrawingEnumerator selectedDrawings = ExportToScale.getSelectedDrawings();
+            //DrawingHandler myDrawingHandler = new DrawingHandler();
 
             foreach (Drawing currentDrawing in selectedDrawings)
             {
+                //myDrawingHandler.SetActiveDrawing(currentDrawing, false);
                 string report = "";
                 akit.TableSelect("Drawing_selection", "dia_draw_select_list", drawingNr);
 
@@ -79,6 +85,8 @@ namespace Tekla.Technology.Akit.UserScript
                 double lineTypeScale = scaleFactor / 4;
 
                 akit.PopupCallback("acmdDisplayExportDrawingsDialog", "", "Drawing_selection", "dia_draw_select_list");
+                //akit.Callback("acmdDisplayExportDrawingsDialog", "", "main_frame");
+                akit.TabChange("diaExportDrawings", "tabWndProperties", "tabOptions");
                 akit.ValueChange("diaExportDrawings", "textScaleFactor", scaleFactor.ToString());
                 akit.ValueChange("diaExportDrawings", "txtLineTypeScale", lineTypeScale.ToString());
                 akit.PushButton("butExport", "diaExportDrawings");
@@ -89,6 +97,7 @@ namespace Tekla.Technology.Akit.UserScript
                 {
                     printerName = PrintToSize.selectPrinter(paper);
 
+                    //akit.Callback("acmd_display_plot_dialog", "", "main_frame");
                     akit.PopupCallback("acmd_display_plot_dialog", "", "Drawing_selection", "dia_draw_select_list");
                     akit.ListSelect("Plot", "component_list", printerName);
                     akit.PushButton("butPrint", "Plot");
@@ -97,6 +106,8 @@ namespace Tekla.Technology.Akit.UserScript
                 {
                     printerName = "PRINTER_NOT_FOUND";
                 }
+
+                //myDrawingHandler.CloseActiveDrawing(false);
 
                 report += elementMark + " ";
                 report += "SCALE: " + scaleFactor.ToString() + " ";
