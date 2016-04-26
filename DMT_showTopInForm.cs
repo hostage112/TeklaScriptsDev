@@ -58,7 +58,7 @@ namespace Tekla.Technology.Akit.UserScript
             {
                 if (allObjects.Current is TSM.Part)
                 {
-                    if ((allObjects.Current as TSM.Part).PartNumber.Prefix.StartsWith("Concrete_"))
+                    if ((allObjects.Current as TSM.Part).Material.MaterialString.StartsWith("C"))
                     {
                         visibleParts.Add(allObjects.Current);
                     }
