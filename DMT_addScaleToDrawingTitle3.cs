@@ -69,7 +69,7 @@ namespace Tekla.Technology.Akit.UserScript
             CoordinateSystem disp = currentView.DisplayCoordinateSystem as CoordinateSystem;
             CoordinateSystem viewp = currentView.ViewCoordinateSystem as CoordinateSystem;
 
-            if (disp.AxisX != viewp.AxisX || disp.AxisY != viewp.AxisY)
+            if (disp.AxisX.Z != viewp.AxisX.Z || disp.AxisY.Z != viewp.AxisY.Z)
             {
                 return false;
             }
