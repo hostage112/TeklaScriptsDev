@@ -29,25 +29,8 @@ namespace Tekla.Technology.Akit.UserScript
                     {
                         MessageBox.Show(i.ToString());
                         i++;
-                        //Tekla.Structures.Drawing.View View = Enum.Current as Tekla.Structures.Drawing.View;
                     }
                 }
-
-                //                ArrayList fileText = new ArrayList();
-                //                foreach (DrawingObject drawingObject in currentDrawing.GetSheet().GetAllObjects())
-                //                {
-                //                    if (drawingObject is TextFile)
-                //                    {
-                //                        fileText.Add(drawingObject);
-                //                    }
-                //                }
-
-                //                if (fileText.Count > 0)
-                //                {
-                //                    MessageBox.Show((fileText as TextFile).InsertionPoint.ToString());
-                //                    Point pp = new Point(0, 0, 0);
-                //                    (fileText as TextFile).InsertionPoint = pp;
-                //                }
 
                 foreach (DrawingObject drawingObject in currentDrawing.GetSheet().GetAllObjects())
                 {
