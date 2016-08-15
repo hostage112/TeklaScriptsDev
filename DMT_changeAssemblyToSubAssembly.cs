@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
-using Tekla.Structures.Model;
 using TSM = Tekla.Structures.Model;
 
 namespace Tekla.Technology.Akit.UserScript
@@ -13,25 +12,25 @@ namespace Tekla.Technology.Akit.UserScript
     {
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
-            Model myModel = new Model();
-            AssemblyToSubAssembly.main();
+            TSM.Model myModel = new TSM.Model();
+            AssemblyToSubAssembly.main(akit);
             myModel.CommitChanges();
         }
     }
 
     public static class AssemblyToSubAssembly
     {
-        public static void main()
+        public static void main(Tekla.Technology.Akit.IScript akit)
         {
             int wrongPartsCount = 0;
 
-            ModelObjectEnumerator selectedObjects = getSelectedObjects();
+            TSM.ModelObjectEnumerator selectedObjects = getSelectedObjects();
             List<Assembly> selectedAssemblys = getSelectedAssemblys(selectedObjects);
 
-            foreach (Assembly currentAssembly in selectedAssemblys)
+            foreach (TSM.Assembly currentAssembly in selectedAssemblys)
             {
-                List<Part> wrongParts = findWrongParts(currentAssembly);
-                fixWrongParts(currentAssembly, wrongParts);
+                List<TSM.Part> wrongParts = findWrongParts(currentAssembly);
+                fixWrongParts(currentAssembly, wrongParts, akit);
                 wrongPartsCount += wrongParts.Count;
             }
 
@@ -39,15 +38,15 @@ namespace Tekla.Technology.Akit.UserScript
                 "Tõstetub ümber " + wrongPartsCount.ToString() + " vigast elementi.");
         }
 
-        private static ModelObjectEnumerator getSelectedObjects()
+        private static TSM.ModelObjectEnumerator getSelectedObjects()
         {
-            var selector = new TSM.UI.ModelObjectSelector();
-            ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
+            TSM.UI.ModelObjectSelector selector = new TSM.UI.ModelObjectSelector();
+            TSM.ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
 
             return selectionEnum;
         }
 
-        private static List<Assembly> getSelectedAssemblys(ModelObjectEnumerator selectedObjects)
+        private static List<TSM.Assembly> getSelectedAssemblys(TSM.ModelObjectEnumerator selectedObjects)
         {
             List<Assembly> selectedAssemblys = new List<Assembly>();
 
@@ -62,13 +61,13 @@ namespace Tekla.Technology.Akit.UserScript
             return selectedAssemblys;
         }
 
-        private static List<Part> findWrongParts(Assembly assembly)
+        private static List<TSM.Part> findWrongParts(TSM.Assembly assembly)
         {
-            Part mainPart = assembly.GetMainPart() as Part;
+            TSM.Part mainPart = assembly.GetMainPart() as TSM.Part;
             ArrayList secondaryParts = new ArrayList(assembly.GetSecondaries());
-            List<Part> wrongParts = new List<Part>();
+            List<TSM.Part> wrongParts = new List<TSM.Part>();
 
-            foreach (Part currentPart in secondaryParts)
+            foreach (TSM.Part currentPart in secondaryParts)
             {
                 if (currentPart.Class != mainPart.Class)
                 {
@@ -79,24 +78,71 @@ namespace Tekla.Technology.Akit.UserScript
             return wrongParts;
         }
 
-        private static void fixWrongParts(Assembly assembly, List<Part> wrongParts)
+        private static void fixWrongParts(TSM.Assembly assembly, List<TSM.Part> wrongParts, Tekla.Technology.Akit.IScript akit)
         {
-            foreach (Part part in wrongParts)
+            foreach (TSM.Part part in wrongParts)
             {
                 changePartToSubAssembly(part, assembly);
             }
         }
 
-        private static void changePartToSubAssembly(Part part, Assembly assembly)
+        private static void changePartToSubAssembly(TSM.Part part, TSM.Assembly assembly, Tekla.Technology.Akit.IScript akit)
         {
             assembly.Remove(part);
             assembly.Modify();
-            part.Modify();
+            //part.Modify();
 
             Assembly partNewAssembly = part.GetAssembly() as Assembly;
+            removeAssemblyPropertys(assembly, akit);
 
             assembly.Add(partNewAssembly);
             assembly.Modify();
+
+            TSM.Part mainpart = assembly.GetMainPart() as TSM.Part;
+            if (assembly.Name == mainpart.Name)
+            {
+                removeAssemblyPropertys(assembly, akit);
+            }
+        }
+    }
+
+    private static void removeAssemblyPropertys(TSM.Assembly currentAssembly, Tekla.Technology.Akit.IScript akit)
+    {
+        ArrayList currentSelection = new ArrayList();
+        currentSelection.Add(currentAssembly);
+
+        TSM.UI.ModelObjectSelector selector = new TSM.UI.ModelObjectSelector();
+        selector.Select(currentSelection);
+
+        akit.Callback("acmd_display_selected_object_dialog", "", "View_01 window_1");
+        TSM.Part currentMainPart = currentAssembly.GetMainPart() as TSM.Part;
+
+        if (!currentMainPart.Material.MaterialString.StartsWith("C"))
+        {
+            akit.ValueChange("steelassembly_1", "AssemblyPrefix", "");
+            akit.ValueChange("steelassembly_1", "AssemblyStartNumber", "");
+            akit.ValueChange("steelassembly_1", "AssemblyName", "");
+            akit.PushButton("modify_button", "steelassembly_1");
+            akit.PushButton("OK_button", "steelassembly_1");
+        }
+        else
+        {
+            if (currentMainPart.CastUnitType == 0)
+            {
+                akit.ValueChange("precastassembly_1", "AssemblyPrefix", "");
+                akit.ValueChange("precastassembly_1", "AssemblyStartNumber", "");
+                akit.ValueChange("precastassembly_1", "AssemblyName", "");
+                akit.PushButton("modify_button", "precastassembly_1");
+                akit.PushButton("OK_button", "precastassembly_1");
+            }
+            else
+            {
+                akit.ValueChange("insituassembly_1", "AssemblyPrefix", "");
+                akit.ValueChange("insituassembly_1", "AssemblyStartNumber", "");
+                akit.ValueChange("insituassembly_1", "AssemblyName", "");
+                akit.PushButton("modify_button", "insituassembly_1");
+                akit.PushButton("OK_button", "insituassembly_1");
+            }
         }
     }
 }
