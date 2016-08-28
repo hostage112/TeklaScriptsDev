@@ -29,21 +29,21 @@ namespace Tekla.Technology.Akit.UserScript
 
             foreach (TSM.Assembly currentAssembly in selectedAssemblys)
             {
-                List<TSM.Part> wrongParts = findWrongParts(currentAssembly);
+                ArrayList wrongParts = findWrongParts(currentAssembly);
 
-				if (wrongParts.Count > 0)
-				{                
-					fixWrongParts(currentAssembly, wrongParts, akit);
-					
-					TSM.Part mainpart = currentAssembly.GetMainPart() as TSM.Part;
-					if (currentAssembly.Name == mainpart.Name)
-					{
-						removeAssemblyPropertys(currentAssembly, akit);
-					}
-				}          
-				
-				wrongPartsCount += wrongParts.Count;
-				
+                if (wrongParts.Count > 0)
+                {
+                    changePartToSubAssembly(currentAssembly, wrongParts, akit);
+
+                    TSM.Part mainpart = currentAssembly.GetMainPart() as TSM.Part;
+                    if (currentAssembly.Name == mainpart.Name)
+                    {
+                        removeAssemblyPropertys(currentAssembly, akit);
+                    }
+                }
+
+                wrongPartsCount += wrongParts.Count;
+
             }
 
             MessageBox.Show("Kontrollitud " + selectedAssemblys.Count.ToString() + " assembly." + Environment.NewLine +
@@ -73,11 +73,11 @@ namespace Tekla.Technology.Akit.UserScript
             return selectedAssemblys;
         }
 
-        private static List<TSM.Part> findWrongParts(TSM.Assembly assembly)
+        private static ArrayList findWrongParts(TSM.Assembly assembly)
         {
             TSM.Part mainPart = assembly.GetMainPart() as TSM.Part;
             ArrayList secondaryParts = new ArrayList(assembly.GetSecondaries());
-            List<TSM.Part> wrongParts = new List<TSM.Part>();
+            ArrayList wrongParts = new ArrayList();
 
             foreach (TSM.Part currentPart in secondaryParts)
             {
@@ -90,28 +90,34 @@ namespace Tekla.Technology.Akit.UserScript
             return wrongParts;
         }
 
-        private static void fixWrongParts(TSM.Assembly assembly, List<TSM.Part> wrongParts, Tekla.Technology.Akit.IScript akit)
+        private static void changePartToSubAssembly(TSM.Assembly assembly, ArrayList wrongParts, Tekla.Technology.Akit.IScript akit)
         {
+            TSM.UI.ModelObjectSelector selector = new TSM.UI.ModelObjectSelector();
+
+            selector.Select(wrongParts);
+            akit.Callback("acmdRemoveFromAssemblyActionCB", "", "View_01 window_1");
+
+            assembly.Modify();
+
+            selector = new TSM.UI.ModelObjectSelector();
+            TSM.ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
+
+            while (selectionEnum.MoveNext())
+            {
+                if (selectionEnum.Current is TSM.Part)
+                {
+                    TSM.Part newPart = selectionEnum.Current as TSM.Part;
+                    TSM.Assembly partNewAssembly = newPart.GetAssembly() as TSM.Assembly;
+                    assembly.Add(partNewAssembly);
+                    assembly.Modify();
+                }
+            }
+
             foreach (TSM.Part part in wrongParts)
             {
-                fixPart(part, assembly);
-                removeAssemblyPropertys(part.GetAssembly() as TSM.Assembly, akit);
+                TSM.Assembly newAssembly = part.GetAssembly() as TSM.Assembly;
+                removeAssemblyPropertys(newAssembly, akit);
             }
-        }
-
-        private static ArrayList fixPart(TSM.Part part, TSM.Assembly assembly)
-        {
-            ArrayList removedAssemblys = new ArrayList();
-
-            assembly.Remove(part);
-            assembly.Modify();
-
-            TSM.Assembly removed = part.GetAssembly() as TSM.Assembly;
-
-            assembly.Add(removed);
-            assembly.Modify();
-
-            return removedAssemblys;
         }
 
         private static void removeAssemblyPropertys(TSM.Assembly currentAssembly, Tekla.Technology.Akit.IScript akit)
