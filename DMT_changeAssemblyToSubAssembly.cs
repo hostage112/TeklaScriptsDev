@@ -97,7 +97,7 @@ namespace Tekla.Technology.Akit.UserScript
             selector.Select(wrongParts);
             akit.Callback("acmdRemoveFromAssemblyActionCB", "", "View_01 window_1");
 
-            assembly.Modify();
+            //assembly.Modify();
 
             selector = new TSM.UI.ModelObjectSelector();
             TSM.ModelObjectEnumerator selectionEnum = selector.GetSelectedObjects();
@@ -108,8 +108,21 @@ namespace Tekla.Technology.Akit.UserScript
                 {
                     TSM.Part newPart = selectionEnum.Current as TSM.Part;
                     TSM.Assembly partNewAssembly = newPart.GetAssembly() as TSM.Assembly;
-                    assembly.Add(partNewAssembly);
-                    assembly.Modify();
+					
+                    ArrayList currentSelection = new ArrayList();
+                    currentSelection.Add(assembly);
+                    selector.Select(currentSelection);
+                    TSM.ModelObjectEnumerator selectionEnum2 = selector.GetSelectedObjects();
+
+                    while (selectionEnum2.MoveNext())
+                    {
+                        if (selectionEnum2.Current is TSM.Assembly)
+                        {
+                            TSM.Assembly newAssembly = selectionEnum2.Current as TSM.Assembly;
+                            newAssembly.Add(partNewAssembly);
+                            newAssembly.Modify();
+                        }
+                    }
                 }
             }
 
