@@ -12,15 +12,18 @@ namespace Tekla.Technology.Akit.UserScript
     {
         public static void Run(Tekla.Technology.Akit.IScript akit)
         {
+            List<string> ignoreClasses = new List<string>();
+            //ignoreClasses.Add("152");
+
             TSM.Model myModel = new TSM.Model();
-            AssemblyToSubAssembly.main(akit);
+            AssemblyToSubAssembly.main(ignoreClasses, akit);
             myModel.CommitChanges();
         }
     }
 
     public static class AssemblyToSubAssembly
     {
-        public static void main(Tekla.Technology.Akit.IScript akit)
+        public static void main(List<string> ignoreClasses, Tekla.Technology.Akit.IScript akit)
         {
             int wrongPartsCount = 0;
 
@@ -29,7 +32,7 @@ namespace Tekla.Technology.Akit.UserScript
 
             foreach (TSM.Assembly currentAssembly in selectedAssemblys)
             {
-                ArrayList wrongParts = findWrongParts(currentAssembly);
+                ArrayList wrongParts = findWrongParts(ignoreClasses, currentAssembly);
 
                 if (wrongParts.Count > 0)
                 {
@@ -73,15 +76,17 @@ namespace Tekla.Technology.Akit.UserScript
             return selectedAssemblys;
         }
 
-        private static ArrayList findWrongParts(TSM.Assembly assembly)
+        private static ArrayList findWrongParts(List<string> ignoreClasses, TSM.Assembly assembly)
         {
             TSM.Part mainPart = assembly.GetMainPart() as TSM.Part;
             ArrayList secondaryParts = new ArrayList(assembly.GetSecondaries());
             ArrayList wrongParts = new ArrayList();
 
+            ignoreClasses.Add(mainPart.Class);
+
             foreach (TSM.Part currentPart in secondaryParts)
             {
-                if (currentPart.Class != mainPart.Class)
+                if (ignoreClasses.Contains(currentPart.Class) == false)
                 {
                     wrongParts.Add(currentPart);
                 }
